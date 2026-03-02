@@ -9,11 +9,22 @@ import {
   RadialLinearScale,
   PointElement,
   LineElement,
+  LineController,
   Filler,
   Tooltip,
   Legend,
+  CategoryScale,
+  LinearScale,
+  BarController,
+  BarElement,
+  Title,
 } from "chart.js";
 
+/**
+ * ✅ Registro COMPLETO do Chart.js
+ * - Radar: RadarController + RadialLinearScale + PointElement + LineElement + Filler
+ * - Combo Bar+Line (gráfico do artigo): BarController/BarElement + LineController/LineElement + scales
+ */
 Chart.register(
   RadarController,
   RadialLinearScale,
@@ -21,7 +32,13 @@ Chart.register(
   LineElement,
   Filler,
   Tooltip,
-  Legend
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarController,
+  BarElement,
+  LineController,
+  Title
 );
 
 type Dimension = { id: number; name: string };
@@ -32,12 +49,65 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-function classifyLevel(percent0to100: number) {
-  if (percent0to100 >= 85) return { label: "Excelente", note: "Maturidade alta e consistente." };
-  if (percent0to100 >= 70) return { label: "Avançado", note: "Bom nível de maturidade, com oportunidades pontuais." };
-  if (percent0to100 >= 50) return { label: "Intermediário", note: "Bases presentes, mas ainda há gaps importantes." };
-  if (percent0to100 >= 30) return { label: "Inicial", note: "Primeiras práticas existentes, precisa consolidar." };
-  return { label: "Crítico", note: "Baixa maturidade; recomenda-se plano estruturado de melhorias." };
+/**
+ * Pesos do artigo (1..5) por dimensão.
+ * - Ferramentas Lean = 1
+ * - Cadeias de valor = 2
+ * - Perspectiva do Funcionário = 3
+ * - Lean Digital = 4
+ * - Lean 4.0 = 5
+ */
+function getWeightForDimension(dimName: string, indexFallback1to5: number) {
+  const key = dimName.trim().toLowerCase();
+
+  if (key.includes("ferrament")) return 1;
+  if (key.includes("cadeia") || key.includes("valor")) return 2;
+  if (key.includes("funcion") || key.includes("perspect")) return 3;
+  if (key.includes("digital")) return 4;
+  if (key.includes("4.0") || key.includes("lean 4")) return 5;
+
+  return clamp(indexFallback1to5, 1, 5);
+}
+
+/**
+ * ✅ Faixas do artigo (0–375)
+ */
+function classifyByPoints(totalPoints: number) {
+  const p = Math.round(totalPoints);
+
+  if (p >= 281) {
+    return {
+      label: "Empresas Destaques",
+      range: "281 – 375 pontos",
+      note:
+        "Tanto os líderes quanto os funcionários entendem e aplicam ferramentas do LM. A soma das notas é de pelo menos 75% da pontuação total.",
+    };
+  }
+
+  if (p >= 187) {
+    return {
+      label: "Empresas Acima da Média",
+      range: "187 – 280 pontos",
+      note:
+        "A soma das notas fica entre 50% e 75% da pontuação total. Muitas das ferramentas do LM são aplicadas, embora possa haver alguns setores que ainda não adotaram a cultura lean.",
+    };
+  }
+
+  if (p >= 93) {
+    return {
+      label: "Empresas Médias",
+      range: "93 – 186 pontos",
+      note:
+        "A soma das notas fica entre 25% e 50% da pontuação total. Nesta categoria, muitas práticas de produção e de relacionamento com clientes seguem modelos de gestão antigos.",
+    };
+  }
+
+  return {
+    label: "Empresas em risco",
+    range: "0 – 92 pontos",
+    note:
+      "A soma das notas é inferior a 25% da pontuação total. Estas empresas utilizam poucas ou nenhuma das ferramentas do LM ou elementos culturais apresentados neste estudo.",
+  };
 }
 
 export default function ResultPage() {
@@ -53,34 +123,30 @@ export default function ResultPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [responses, setResponses] = useState<ResponseRow[]>([]);
   const [assessmentLocked, setAssessmentLocked] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
 
   const radarCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const radarChartRef = useRef<Chart | null>(null);
+
+  const weightedCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const weightedChartRef = useRef<Chart | null>(null);
 
   useEffect(() => {
     if (!assessmentId) return;
 
     async function load() {
       setLoading(true);
-      setLoadError(null);
 
       const [dRes, qRes, rRes, aRes] = await Promise.all([
         supabase.from("dimensions").select("id,name").order("id"),
         supabase.from("questions").select("id,dimension_id").order("id"),
         supabase.from("responses").select("question_id,value").eq("assessment_id", assessmentId),
-        // OBS: aqui assume que a tabela assessments tem colunas locked e locked_at
         supabase.from("assessments").select("id,locked,locked_at").eq("id", assessmentId).maybeSingle(),
       ]);
 
-      const firstErr =
-        dRes.error?.message ||
-        qRes.error?.message ||
-        rRes.error?.message ||
-        aRes.error?.message ||
-        null;
-
-      if (firstErr) setLoadError(firstErr);
+      if (dRes.error) alert(dRes.error.message);
+      if (qRes.error) alert(qRes.error.message);
+      if (rRes.error) alert(rRes.error.message);
+      if (aRes.error) alert(aRes.error.message);
 
       setDimensions((dRes.data ?? []) as Dimension[]);
       setQuestions((qRes.data ?? []) as Question[]);
@@ -102,15 +168,21 @@ export default function ResultPage() {
     return m;
   }, [responses]);
 
+  /**
+   * Stats por dimensão:
+   * - avg (0..5) para radar
+   * - sum (ex.: 5..25 quando há 5 perguntas) para pontuação do artigo
+   */
   const dimensionStats = useMemo(() => {
-    // média por dimensão (0..5)
     return dimensions.map((dim) => {
       const qids = questions.filter((q) => q.dimension_id === dim.id).map((q) => q.id);
+
       const vals = qids
         .map((qid) => byQuestion.get(qid))
         .filter((v): v is number => typeof v === "number");
 
-      const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+      const sum = vals.length ? vals.reduce((a, b) => a + b, 0) : 0;
+      const avg = vals.length ? sum / vals.length : 0;
       const percent = (avg / 5) * 100;
 
       return {
@@ -118,31 +190,60 @@ export default function ResultPage() {
         name: dim.name,
         answered: vals.length,
         total: qids.length,
+        sum: Number(sum.toFixed(0)),
         avg: Number(avg.toFixed(2)),
         percent: Number(percent.toFixed(2)),
       };
     });
   }, [dimensions, questions, byQuestion]);
 
+  /**
+   * Percentual geral (0..100) mantido para UI,
+   * mas a pontuação "conforme artigo" vem do weighted.totalPoints (0..375).
+   */
   const overall = useMemo(() => {
-    // média geral ponderada por questão
     const vals: number[] = [];
     for (const q of questions) {
       const v = byQuestion.get(q.id);
       if (typeof v === "number") vals.push(v);
     }
-    const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+    const sum = vals.length ? vals.reduce((a, b) => a + b, 0) : 0;
+    const avg = vals.length ? sum / vals.length : 0;
     const percent = (avg / 5) * 100;
-    const level = classifyLevel(percent);
-
-    return {
-      avg: Number(avg.toFixed(2)),
-      percent: Number(percent.toFixed(0)),
-      level,
-    };
+    return { avg: Number(avg.toFixed(2)), percent: Number(percent.toFixed(0)) };
   }, [questions, byQuestion]);
 
-  // Render radar
+  /**
+   * ✅ Cálculo 100% no modelo do artigo:
+   * - por dimensão: Pontos = (SOMA das respostas 1..5) × Peso (1..5)
+   * - máximo por dimensão: (QtdePerguntas × 5) × Peso
+   * - total máximo esperado: 375 (quando 5 perguntas por dimensão e pesos 1..5)
+   */
+  const weighted = useMemo(() => {
+    const rows = dimensionStats.map((d, idx) => {
+      const weight = getWeightForDimension(d.name, idx + 1);
+      const maxPoints = d.total * 5 * weight; // ex: 5*5*weight = 25*weight
+      const points = d.sum * weight; // ✅ soma real × peso (artigo)
+      return {
+        ...d,
+        weight,
+        maxPoints,
+        points: Number(points.toFixed(0)),
+      };
+    });
+
+    const totalPoints = rows.reduce((sum, r) => sum + r.points, 0);
+    const maxTotal = rows.reduce((sum, r) => sum + r.maxPoints, 0) || 375;
+
+    return {
+      rows,
+      totalPoints: Number(totalPoints.toFixed(0)),
+      maxTotal: Number(maxTotal.toFixed(0)),
+      classification: classifyByPoints(totalPoints),
+    };
+  }, [dimensionStats]);
+
+  // Radar
   useEffect(() => {
     if (!radarCanvasRef.current) return;
     if (!dimensions.length) return;
@@ -150,10 +251,7 @@ export default function ResultPage() {
     const labels = dimensionStats.map((d) => d.name);
     const data = dimensionStats.map((d) => d.avg);
 
-    // destroy antigo
     radarChartRef.current?.destroy();
-    radarChartRef.current = null;
-
     radarChartRef.current = new Chart(radarCanvasRef.current, {
       type: "radar",
       data: {
@@ -165,29 +263,14 @@ export default function ResultPage() {
             borderWidth: 2,
             pointRadius: 3,
             fill: true,
-            // Paleta alinhada com a logo (verde/emerald como primária)
-            borderColor: "rgb(4,120,87)", // emerald-700
-            backgroundColor: "rgba(4,120,87,0.18)",
-            pointBackgroundColor: "rgb(4,120,87)",
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { display: true },
-          tooltip: { enabled: true },
-        },
         scales: {
-          r: {
-            suggestedMin: 0,
-            suggestedMax: 5,
-            ticks: { stepSize: 1, showLabelBackdrop: false },
-            grid: { color: "rgba(15,23,42,0.12)" },
-            angleLines: { color: "rgba(15,23,42,0.12)" },
-            pointLabels: { color: "#0f172a", font: { size: 12 } },
-          },
+          r: { suggestedMin: 0, suggestedMax: 5, ticks: { stepSize: 1 } },
         },
       },
     });
@@ -198,8 +281,70 @@ export default function ResultPage() {
     };
   }, [dimensions.length, dimensionStats]);
 
+  // Gráfico do artigo (bar + line)
+  useEffect(() => {
+    if (!weightedCanvasRef.current) return;
+    if (!weighted.rows.length) return;
+
+    const labels = weighted.rows.map((r) => r.name);
+    const barData = weighted.rows.map((r) => r.points);
+    const lineData = weighted.rows.map((r) => r.weight);
+
+    weightedChartRef.current?.destroy();
+    weightedChartRef.current = new Chart(weightedCanvasRef.current, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            type: "bar",
+            label: "Pontuação final (Pontos × Peso)",
+            data: barData,
+            borderWidth: 1,
+            yAxisID: "yPoints",
+          },
+          {
+            type: "line",
+            label: "Pesos",
+            data: lineData,
+            borderWidth: 2,
+            pointRadius: 3,
+            tension: 0.25,
+            yAxisID: "yWeights",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true },
+        },
+        scales: {
+          yPoints: {
+            position: "left",
+            beginAtZero: true,
+            title: { display: true, text: "Pontuação final (Pontos × Peso)" },
+          },
+          yWeights: {
+            position: "right",
+            beginAtZero: true,
+            suggestedMax: 5,
+            ticks: { stepSize: 1 },
+            grid: { drawOnChartArea: false },
+            title: { display: true, text: "Pesos" },
+          },
+        },
+      },
+    });
+
+    return () => {
+      weightedChartRef.current?.destroy();
+      weightedChartRef.current = null;
+    };
+  }, [weighted]);
+
   async function handleGeneratePdf() {
-    // Evita html2canvas -> evita OKLCH
     try {
       setGeneratingPdf(true);
       const oldTitle = document.title;
@@ -230,13 +375,12 @@ export default function ResultPage() {
       total: d.total,
     }));
 
-    // 1) salva/atualiza resultados
     const upsertRes = await supabase.from("assessment_results").upsert(
       {
         assessment_id: assessmentId,
         overall_avg: overall.avg,
         overall_percent: overall.percent,
-        level: overall.level.label,
+        level: weighted.classification.label,
         answered_count: answeredCount,
         total_questions: totalQuestions,
         dimension_avgs,
@@ -252,7 +396,6 @@ export default function ResultPage() {
       return;
     }
 
-    // 2) trava na tabela assessments
     const lockRes = await supabase
       .from("assessments")
       .update({ locked: true, locked_at: new Date().toISOString() })
@@ -269,165 +412,108 @@ export default function ResultPage() {
     alert("Avaliação finalizada e travada com sucesso!");
   }
 
-  const progress = totalQuestions ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+  if (loading) return <div className="p-6">Carregando...</div>;
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-slate-50">
-        <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
-          <div className="rounded-2xl bg-white p-4 text-sm text-slate-700 shadow-sm ring-1 ring-slate-200">
-            Carregando…
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const progress = totalQuestions ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
-        {/* HEADER */}
-        <div className="mb-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="text-xl font-semibold text-slate-900 lg:text-2xl">Resultados</h1>
-              <p className="text-sm text-slate-600">
-                Respondidas: {answeredCount} / {totalQuestions}
-              </p>
-            </div>
+      <div className="mx-auto max-w-5xl px-4 py-6">
+        <div className="mb-4">
+          <h1 className="text-xl font-semibold text-slate-900">Resultados</h1>
+          <p className="text-sm text-slate-600">
+            Respondidas: {answeredCount} / {totalQuestions}
+          </p>
 
-            <button
-              type="button"
-              onClick={() => router.push("/")}
-              className="hidden rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50 active:scale-[0.99] sm:inline-flex print:hidden"
-            >
-              Início
-            </button>
-          </div>
-
-          {loadError && (
-            <div className="mt-3 rounded-2xl bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">
-              Erro ao carregar: {loadError}
-            </div>
-          )}
-
-          {/* Progresso */}
-          <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-            <div className="mb-2 flex justify-between text-xs text-slate-600">
+          <div className="mt-3">
+            <div className="mb-1 flex justify-between text-xs text-slate-600">
               <span>Progresso</span>
               <span>{progress}%</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-slate-200">
               <div
-                className="h-full bg-emerald-700 transition-all"
+                className="h-full bg-slate-900 transition-all"
                 style={{ width: `${clamp(progress, 0, 100)}%` }}
               />
             </div>
           </div>
         </div>
 
-        {/* GRID: conteúdo + ações sticky */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-4">
-            {/* Resumo */}
-            <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <div className="text-sm text-slate-600">Maturidade Geral</div>
-              <div className="mt-1 text-4xl font-semibold text-slate-900">{overall.percent}%</div>
-              <div className="mt-1 text-sm text-slate-700">
-                Nível: <span className="font-semibold text-slate-900">{overall.level.label}</span>
-              </div>
-              <p className="mt-2 text-xs text-slate-600">{overall.level.note}</p>
-            </section>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <section className="rounded-2xl border bg-white p-4 shadow-sm lg:col-span-1">
+            <div className="text-sm text-slate-600">Maturidade Geral</div>
+            <div className="mt-1 text-4xl font-semibold text-slate-900">{overall.percent}%</div>
 
-            {/* Radar */}
-            <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="font-semibold text-slate-900">Radar por dimensão</div>
-                <div className="text-xs text-slate-500">Média (0–5)</div>
+            <div className="mt-4 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="text-xs font-semibold text-slate-700">Pontuação (modelo do artigo)</div>
+
+              <div className="mt-1 flex items-baseline gap-2">
+                <div className="text-2xl font-semibold text-slate-900">{weighted.totalPoints}</div>
+                <div className="text-xs text-slate-600">/ {weighted.maxTotal} pts</div>
               </div>
 
-              <div className="h-[340px]">
-                <canvas ref={radarCanvasRef} />
+              <div className="mt-2 text-sm">
+                <span className="font-semibold text-slate-900">{weighted.classification.label}</span>
               </div>
-
-              <p className="mt-2 text-xs text-slate-600">
-                Escala do radar: 0–5 (média das respostas de cada dimensão).
+              <div className="mt-1 text-xs text-slate-600">{weighted.classification.range}</div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-700">
+                {weighted.classification.note}
               </p>
-            </section>
+            </div>
+          </section>
 
-            {/* Detalhamento */}
-            <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <div className="mb-3 font-semibold text-slate-900">Detalhamento</div>
+          <section className="rounded-2xl border bg-white p-4 shadow-sm lg:col-span-2">
+            <div className="mb-3 font-semibold text-slate-900">Radar por dimensão</div>
+            <div className="h-[320px]">
+              <canvas ref={radarCanvasRef} />
+            </div>
+            <p className="mt-2 text-xs text-slate-600">
+              Escala do radar: 0–5 (média das respostas de cada dimensão).
+            </p>
+          </section>
+        </div>
 
-              <div className="space-y-3">
-                {dimensionStats.map((d) => (
-                  <div key={d.id} className="rounded-2xl border border-slate-200 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 text-sm font-semibold text-slate-900">{d.name}</div>
-                      <div className="shrink-0 text-sm text-slate-700">{d.avg.toFixed(2)} / 5</div>
-                    </div>
-
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-                      <div
-                        className="h-full bg-emerald-700"
-                        style={{ width: `${clamp(d.percent, 0, 100)}%` }}
-                      />
-                    </div>
-
-                    <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
-                      <span>
-                        {d.answered}/{d.total} respondidas
-                      </span>
-                      <span>{Math.round(d.percent)}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+        <section className="mt-4 rounded-2xl border bg-white p-4 shadow-sm">
+          <div className="font-semibold text-slate-900">Análise de maturidade Lean</div>
+          <div className="text-xs text-slate-600">
+            Pontuação final (Pontos × Peso) + Pesos (1–5) — conforme modelo do artigo.
           </div>
 
-          {/* AÇÕES */}
-          <aside className="lg:sticky lg:top-6 print:hidden">
-            <div className="space-y-2 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-              <button
-                type="button"
-                onClick={() => router.push(`/assessment/${assessmentId}`)}
-                className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50 active:scale-[0.99]"
-              >
-                Voltar ao questionário
-              </button>
+          <div className="mt-3 h-[320px]">
+            <canvas ref={weightedCanvasRef} />
+          </div>
+        </section>
 
-              <button
-                type="button"
-                onClick={handleGeneratePdf}
-                disabled={generatingPdf}
-                className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-950 disabled:opacity-60 active:scale-[0.99]"
-              >
-                {generatingPdf ? "Abrindo impressão..." : "Gerar PDF"}
-              </button>
+        <div className="mt-6 max-w-md space-y-2 print:hidden">
+          <button
+            onClick={() => router.push(`/assessment/${assessmentId}`)}
+            className="w-full rounded-2xl border bg-white py-3 shadow-sm"
+          >
+            Voltar ao questionário
+          </button>
 
-              <button
-                type="button"
-                onClick={handleFinalizeAndLock}
-                disabled={savingLock || assessmentLocked}
-                className="w-full rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 disabled:opacity-60 active:scale-[0.99]"
-              >
-                {assessmentLocked ? "Avaliação travada" : savingLock ? "Finalizando..." : "Finalizar e travar"}
-              </button>
+          <button
+            onClick={handleGeneratePdf}
+            disabled={generatingPdf}
+            className="w-full rounded-2xl bg-slate-700 py-3 text-white disabled:opacity-60"
+          >
+            {generatingPdf ? "Abrindo impressão..." : "Gerar PDF"}
+          </button>
 
-              <button
-                type="button"
-                onClick={() => router.push("/")}
-                className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50 active:scale-[0.99]"
-              >
-                Ir para início
-              </button>
+          <button
+            onClick={handleFinalizeAndLock}
+            disabled={savingLock || assessmentLocked}
+            className="w-full rounded-2xl bg-emerald-600 py-3 text-white disabled:opacity-60"
+          >
+            {assessmentLocked ? "Avaliação travada" : savingLock ? "Finalizando..." : "Finalizar e travar"}
+          </button>
 
-              <div className="pt-2 text-xs text-slate-500">
-                Dica: finalize e trave somente quando estiver 100% respondido.
-              </div>
-            </div>
-          </aside>
+          <button
+            onClick={() => router.push("/")}
+            className="w-full rounded-2xl border bg-white py-3 shadow-sm"
+          >
+            Ir para início
+          </button>
         </div>
       </div>
     </main>

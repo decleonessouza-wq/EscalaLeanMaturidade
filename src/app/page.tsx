@@ -327,11 +327,11 @@ export default function HomePage() {
       <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
         {/* HEADER com LOGO */}
         <header className="mb-6">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
-              {/* principal: icon-512.png | fallback: icon-192.png */}
+          <div className="flex items-center gap-4">
+            {/* LOGO MAIOR */}
+            <div className="h-20 w-20 overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 sm:h-24 sm:w-24">
               <img
-                src="/icons/icon-512.png"
+                src="/icons/icon-192.png"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = "/icons/icon-192.png";
                 }}
@@ -340,18 +340,23 @@ export default function HomePage() {
               />
             </div>
 
+            {/* TÍTULO “BRAND” */}
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-semibold text-slate-900 lg:text-2xl">
-                Escala Lean Maturity
+              <h1 className="truncate text-2xl font-extrabold tracking-tight sm:text-3xl">
+                <span className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-slate-900 bg-clip-text text-transparent">
+                  Escala Lean de Maturidade
+                </span>
               </h1>
-              <p className="text-sm text-slate-600">
-                Avaliações de maturidade Lean (mobile-first, PWA).
+
+              <p className="mt-1 text-sm text-slate-600 sm:text-base">
+                <span className="font-semibold text-emerald-700">PWA</span> • Formulário de avaliações
+                de maturidade Lean
               </p>
             </div>
           </div>
 
           {/* ações principais */}
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:max-w-md">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:max-w-md">
             <Link
               href="/new"
               className="rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 active:scale-[0.99]"
@@ -406,9 +411,7 @@ export default function HomePage() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-slate-900">
-                          {c.name}
-                        </div>
+                        <div className="truncate text-sm font-semibold text-slate-900">{c.name}</div>
                         <div className="mt-1 text-xs text-slate-500">
                           Criada em {formatDateTime(c.created_at)}
                         </div>
@@ -460,9 +463,7 @@ export default function HomePage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold text-slate-900">
-                            {a.title}
-                          </div>
+                          <div className="truncate text-sm font-semibold text-slate-900">{a.title}</div>
                           <div className="mt-1 text-xs text-slate-600">
                             {companyName ? `${companyName} • ` : ""}
                             {a.context_unit ?? "—"} • {formatDate(a.applied_at)}
@@ -490,7 +491,7 @@ export default function HomePage() {
         </div>
 
         <footer className="mt-8 pb-6 text-center text-xs text-slate-500">
-          Escala Lean - Maturity • Desenvolvido por Decleones Andrade • v0.1
+          Escala Lean de Maturidade • Desenvolvido por Decleones Andrade • v0.1
         </footer>
       </div>
 
@@ -623,7 +624,10 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label htmlFor="edit-assessment-context" className="text-xs font-semibold text-slate-700">
+              <label
+                htmlFor="edit-assessment-context"
+                className="text-xs font-semibold text-slate-700"
+              >
                 Unidade/Contexto
               </label>
               <input

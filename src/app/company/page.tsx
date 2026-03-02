@@ -331,7 +331,7 @@ export default function CompanyListPage() {
         </section>
 
         <footer className="mt-8 pb-6 text-center text-xs text-slate-500">
-          Escala Lean Maturity • Empresas • v0.1
+          Escala Lean de Maturidade • Empresas • v0.1
         </footer>
       </div>
 

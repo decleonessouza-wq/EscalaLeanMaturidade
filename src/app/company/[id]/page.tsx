@@ -411,7 +411,7 @@ export default function CompanyDetailPage() {
             </div>
 
             <footer className="mt-4 pb-4 text-center text-xs text-slate-500">
-              Escala Lean Maturity • Empresa • v0.1
+              Escala Lean de Maturidade • Empresa • v0.1
             </footer>
           </aside>
         </div>
