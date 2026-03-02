@@ -139,8 +139,15 @@ export default function ResultPage() {
       const [dRes, qRes, rRes, aRes] = await Promise.all([
         supabase.from("dimensions").select("id,name").order("id"),
         supabase.from("questions").select("id,dimension_id").order("id"),
-        supabase.from("responses").select("question_id,value").eq("assessment_id", assessmentId),
-        supabase.from("assessments").select("id,locked,locked_at").eq("id", assessmentId).maybeSingle(),
+        supabase
+          .from("responses")
+          .select("question_id,value")
+          .eq("assessment_id", assessmentId),
+        supabase
+          .from("assessments")
+          .select("id,locked,locked_at")
+          .eq("id", assessmentId)
+          .maybeSingle(),
       ]);
 
       if (dRes.error) alert(dRes.error.message);
@@ -175,7 +182,9 @@ export default function ResultPage() {
    */
   const dimensionStats = useMemo(() => {
     return dimensions.map((dim) => {
-      const qids = questions.filter((q) => q.dimension_id === dim.id).map((q) => q.id);
+      const qids = questions
+        .filter((q) => q.dimension_id === dim.id)
+        .map((q) => q.id);
 
       const vals = qids
         .map((qid) => byQuestion.get(qid))
@@ -222,8 +231,8 @@ export default function ResultPage() {
   const weighted = useMemo(() => {
     const rows = dimensionStats.map((d, idx) => {
       const weight = getWeightForDimension(d.name, idx + 1);
-      const maxPoints = d.total * 5 * weight; // ex: 5*5*weight = 25*weight
-      const points = d.sum * weight; // ✅ soma real × peso (artigo)
+      const maxPoints = d.total * 5 * weight;
+      const points = d.sum * weight;
       return {
         ...d,
         weight,
@@ -442,20 +451,32 @@ export default function ResultPage() {
         <div className="grid gap-4 lg:grid-cols-3">
           <section className="rounded-2xl border bg-white p-4 shadow-sm lg:col-span-1">
             <div className="text-sm text-slate-600">Maturidade Geral</div>
-            <div className="mt-1 text-4xl font-semibold text-slate-900">{overall.percent}%</div>
+            <div className="mt-1 text-4xl font-semibold text-slate-900">
+              {overall.percent}%
+            </div>
 
             <div className="mt-4 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
-              <div className="text-xs font-semibold text-slate-700">Pontuação (modelo do artigo)</div>
+              <div className="text-xs font-semibold text-slate-700">
+                Pontuação (modelo do artigo)
+              </div>
 
               <div className="mt-1 flex items-baseline gap-2">
-                <div className="text-2xl font-semibold text-slate-900">{weighted.totalPoints}</div>
-                <div className="text-xs text-slate-600">/ {weighted.maxTotal} pts</div>
+                <div className="text-2xl font-semibold text-slate-900">
+                  {weighted.totalPoints}
+                </div>
+                <div className="text-xs text-slate-600">
+                  / {weighted.maxTotal} pts
+                </div>
               </div>
 
               <div className="mt-2 text-sm">
-                <span className="font-semibold text-slate-900">{weighted.classification.label}</span>
+                <span className="font-semibold text-slate-900">
+                  {weighted.classification.label}
+                </span>
               </div>
-              <div className="mt-1 text-xs text-slate-600">{weighted.classification.range}</div>
+              <div className="mt-1 text-xs text-slate-600">
+                {weighted.classification.range}
+              </div>
               <p className="mt-2 text-xs leading-relaxed text-slate-700">
                 {weighted.classification.note}
               </p>
@@ -463,7 +484,9 @@ export default function ResultPage() {
           </section>
 
           <section className="rounded-2xl border bg-white p-4 shadow-sm lg:col-span-2">
-            <div className="mb-3 font-semibold text-slate-900">Radar por dimensão</div>
+            <div className="mb-3 font-semibold text-slate-900">
+              Radar por dimensão
+            </div>
             <div className="h-[320px]">
               <canvas ref={radarCanvasRef} />
             </div>
@@ -474,9 +497,12 @@ export default function ResultPage() {
         </div>
 
         <section className="mt-4 rounded-2xl border bg-white p-4 shadow-sm">
-          <div className="font-semibold text-slate-900">Análise de maturidade Lean</div>
+          <div className="font-semibold text-slate-900">
+            Análise de maturidade Lean
+          </div>
           <div className="text-xs text-slate-600">
-            Pontuação final (Pontos × Peso) + Pesos (1–5) — conforme modelo do artigo.
+            Pontuação final (Pontos × Peso) + Pesos (1–5) — conforme modelo do
+            artigo.
           </div>
 
           <div className="mt-3 h-[320px]">
@@ -501,11 +527,22 @@ export default function ResultPage() {
           </button>
 
           <button
+            onClick={() => router.push(`/assessment/${assessmentId}/report`)}
+            className="w-full rounded-2xl bg-slate-900 py-3 text-white disabled:opacity-60"
+          >
+            Relatório detalhado
+          </button>
+
+          <button
             onClick={handleFinalizeAndLock}
             disabled={savingLock || assessmentLocked}
             className="w-full rounded-2xl bg-emerald-600 py-3 text-white disabled:opacity-60"
           >
-            {assessmentLocked ? "Avaliação travada" : savingLock ? "Finalizando..." : "Finalizar e travar"}
+            {assessmentLocked
+              ? "Avaliação travada"
+              : savingLock
+              ? "Finalizando..."
+              : "Finalizar e travar"}
           </button>
 
           <button
