@@ -327,32 +327,55 @@ export default function HomePage() {
       <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
         {/* HEADER com LOGO */}
         <header className="mb-6">
-          <div className="flex items-center gap-4">
-            {/* LOGO MAIOR */}
-            <div className="h-20 w-20 overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 sm:h-24 sm:w-24">
-              <img
-                src="/icons/icon-192.png"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/icons/icon-192.png";
-                }}
-                alt="Logo Escala Lean Maturity"
-                className="h-full w-full object-cover"
-              />
-            </div>
 
-            {/* TÍTULO “BRAND” */}
-            <div className="min-w-0">
-              <h1 className="truncate text-2xl font-extrabold tracking-tight sm:text-3xl">
-                <span className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-slate-900 bg-clip-text text-transparent">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+
+            {/* LOGO + TEXTO */}
+            <div className="flex items-start gap-3">
+
+              {/* LOGO maior */}
+              <div className="h-24 w-24 sm:h-28 sm:w-28 overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shrink-0">
+
+                <img
+                  src="/icons/icon-192.png"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "/icons/icon-192.png";
+                  }}
+                  alt="Logo Escala Lean Maturity"
+                  className="h-full w-full object-contain p-1"
+                />
+
+              </div>
+
+
+              {/* TEXTOS */}
+              <div className="min-w-0">
+
+                {/* título com gradiente */}
+                <h1
+                  className="
+                  text-2xl sm:text-3xl font-bold
+                  bg-gradient-to-r
+                  from-emerald-600
+                  via-emerald-900
+                  to-teal-500
+                  bg-clip-text
+                  text-transparent
+                  leading-tight
+                  break-words
+                  "
+                >
                   Escala Lean de Maturidade
-                </span>
-              </h1>
+                </h1>
 
-              <p className="mt-1 text-sm text-slate-600 sm:text-base">
-                <span className="font-semibold text-emerald-700">PWA</span> • Formulário de avaliações
-                de maturidade Lean
-              </p>
+                <p className="mt-1 text-sm sm:text-base text-slate-600 leading-snug">
+                  PWA • Formulário de avaliações de maturidade Lean
+                </p>
+
+              </div>
+
             </div>
+
           </div>
 
           {/* ações principais */}
