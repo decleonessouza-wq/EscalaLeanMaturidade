@@ -110,6 +110,41 @@ function classifyByPoints(totalPoints: number) {
   };
 }
 
+/**
+ * Heatmap real (coerente com o artigo):
+ * - Base: percentual por dimensão (média 0..5 convertida para 0..100)
+ * - Força: >= 75%
+ * - Atenção: 50..74%
+ * - Alerta: 25..49%
+ * - Crítico: < 25%
+ *
+ * Observação: isso NÃO inventa nada, só interpreta a pontuação do próprio questionário.
+ */
+function heatBucket(percent0to100: number) {
+  if (percent0to100 >= 75) {
+    return {
+      label: "Forte",
+      cls: "bg-emerald-600 text-white ring-emerald-700/20",
+    };
+  }
+  if (percent0to100 >= 50) {
+    return {
+      label: "Atenção",
+      cls: "bg-sky-600 text-white ring-sky-700/20",
+    };
+  }
+  if (percent0to100 >= 25) {
+    return {
+      label: "Alerta",
+      cls: "bg-amber-500 text-white ring-amber-600/20",
+    };
+  }
+  return {
+    label: "Crítico",
+    cls: "bg-red-600 text-white ring-red-700/20",
+  };
+}
+
 export default function ResultPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -139,15 +174,8 @@ export default function ResultPage() {
       const [dRes, qRes, rRes, aRes] = await Promise.all([
         supabase.from("dimensions").select("id,name").order("id"),
         supabase.from("questions").select("id,dimension_id").order("id"),
-        supabase
-          .from("responses")
-          .select("question_id,value")
-          .eq("assessment_id", assessmentId),
-        supabase
-          .from("assessments")
-          .select("id,locked,locked_at")
-          .eq("id", assessmentId)
-          .maybeSingle(),
+        supabase.from("responses").select("question_id,value").eq("assessment_id", assessmentId),
+        supabase.from("assessments").select("id,locked,locked_at").eq("id", assessmentId).maybeSingle(),
       ]);
 
       if (dRes.error) alert(dRes.error.message);
@@ -182,9 +210,7 @@ export default function ResultPage() {
    */
   const dimensionStats = useMemo(() => {
     return dimensions.map((dim) => {
-      const qids = questions
-        .filter((q) => q.dimension_id === dim.id)
-        .map((q) => q.id);
+      const qids = questions.filter((q) => q.dimension_id === dim.id).map((q) => q.id);
 
       const vals = qids
         .map((qid) => byQuestion.get(qid))
@@ -226,7 +252,6 @@ export default function ResultPage() {
    * ✅ Cálculo 100% no modelo do artigo:
    * - por dimensão: Pontos = (SOMA das respostas 1..5) × Peso (1..5)
    * - máximo por dimensão: (QtdePerguntas × 5) × Peso
-   * - total máximo esperado: 375 (quando 5 perguntas por dimensão e pesos 1..5)
    */
   const weighted = useMemo(() => {
     const rows = dimensionStats.map((d, idx) => {
@@ -250,6 +275,26 @@ export default function ResultPage() {
       maxTotal: Number(maxTotal.toFixed(0)),
       classification: classifyByPoints(totalPoints),
     };
+  }, [dimensionStats]);
+
+  /**
+   * ✅ Heatmap (pontos fortes x fracos) — estritamente baseado no percent por dimensão.
+   * Também derivamos:
+   * - topStrong: 2 melhores dimensões
+   * - topWeak: 2 piores dimensões
+   */
+  const heatmap = useMemo(() => {
+    const rows = dimensionStats
+      .map((d) => ({
+        ...d,
+        bucket: heatBucket(d.percent),
+      }))
+      .sort((a, b) => b.percent - a.percent);
+
+    const topStrong = rows.slice(0, 2);
+    const topWeak = [...rows].reverse().slice(0, 2);
+
+    return { rows, topStrong, topWeak };
   }, [dimensionStats]);
 
   // Radar
@@ -451,32 +496,20 @@ export default function ResultPage() {
         <div className="grid gap-4 lg:grid-cols-3">
           <section className="rounded-2xl border bg-white p-4 shadow-sm lg:col-span-1">
             <div className="text-sm text-slate-600">Maturidade Geral</div>
-            <div className="mt-1 text-4xl font-semibold text-slate-900">
-              {overall.percent}%
-            </div>
+            <div className="mt-1 text-4xl font-semibold text-slate-900">{overall.percent}%</div>
 
             <div className="mt-4 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
-              <div className="text-xs font-semibold text-slate-700">
-                Pontuação (modelo do artigo)
-              </div>
+              <div className="text-xs font-semibold text-slate-700">Pontuação (modelo do artigo)</div>
 
               <div className="mt-1 flex items-baseline gap-2">
-                <div className="text-2xl font-semibold text-slate-900">
-                  {weighted.totalPoints}
-                </div>
-                <div className="text-xs text-slate-600">
-                  / {weighted.maxTotal} pts
-                </div>
+                <div className="text-2xl font-semibold text-slate-900">{weighted.totalPoints}</div>
+                <div className="text-xs text-slate-600">/ {weighted.maxTotal} pts</div>
               </div>
 
               <div className="mt-2 text-sm">
-                <span className="font-semibold text-slate-900">
-                  {weighted.classification.label}
-                </span>
+                <span className="font-semibold text-slate-900">{weighted.classification.label}</span>
               </div>
-              <div className="mt-1 text-xs text-slate-600">
-                {weighted.classification.range}
-              </div>
+              <div className="mt-1 text-xs text-slate-600">{weighted.classification.range}</div>
               <p className="mt-2 text-xs leading-relaxed text-slate-700">
                 {weighted.classification.note}
               </p>
@@ -484,9 +517,7 @@ export default function ResultPage() {
           </section>
 
           <section className="rounded-2xl border bg-white p-4 shadow-sm lg:col-span-2">
-            <div className="mb-3 font-semibold text-slate-900">
-              Radar por dimensão
-            </div>
+            <div className="mb-3 font-semibold text-slate-900">Radar por dimensão</div>
             <div className="h-[320px]">
               <canvas ref={radarCanvasRef} />
             </div>
@@ -496,13 +527,108 @@ export default function ResultPage() {
           </section>
         </div>
 
+        {/* ✅ HEATMAP */}
         <section className="mt-4 rounded-2xl border bg-white p-4 shadow-sm">
-          <div className="font-semibold text-slate-900">
-            Análise de maturidade Lean
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="font-semibold text-slate-900">Mapa de calor (forças e fraquezas)</div>
+              <div className="text-xs text-slate-600">
+                Baseado no percentual por dimensão (média 0–5 convertida para 0–100). Não é inferência:
+                é leitura direta das suas respostas.
+              </div>
+            </div>
+
+            <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                Forte ≥ 75%
+              </span>
+              <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-800 ring-1 ring-sky-200">
+                Atenção 50–74%
+              </span>
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+                Alerta 25–49%
+              </span>
+              <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800 ring-1 ring-red-200">
+                Crítico &lt; 25%
+              </span>
+            </div>
           </div>
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {heatmap.rows.map((d) => (
+              <div
+                key={d.id}
+                className="rounded-2xl border border-slate-200 bg-white p-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-slate-900">{d.name}</div>
+                    <div className="mt-1 text-xs text-slate-600">
+                      Média: <b>{d.avg}</b> / 5 • {d.answered}/{d.total} respondidas
+                    </div>
+                  </div>
+
+                  <span
+                    className={[
+                      "shrink-0 rounded-full px-3 py-1 text-xs font-semibold ring-1",
+                      d.bucket.cls,
+                    ].join(" ")}
+                    title={`Percentual: ${Math.round(d.percent)}%`}
+                  >
+                    {d.bucket.label}
+                  </span>
+                </div>
+
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full bg-slate-900 transition-all"
+                    style={{ width: `${clamp(Math.round(d.percent), 0, 100)}%` }}
+                  />
+                </div>
+
+                <div className="mt-1 flex justify-between text-[11px] text-slate-500">
+                  <span>{Math.round(d.percent)}%</span>
+                  <span>0–100</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="text-xs font-semibold text-slate-700">Pontos mais fortes</div>
+              <ul className="mt-2 space-y-1 text-xs text-slate-700">
+                {heatmap.topStrong.map((x) => (
+                  <li key={x.id} className="flex items-center justify-between gap-2">
+                    <span className="truncate">{x.name}</span>
+                    <span className="shrink-0 font-semibold">{Math.round(x.percent)}%</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <div className="text-xs font-semibold text-slate-700">Pontos mais fracos</div>
+              <ul className="mt-2 space-y-1 text-xs text-slate-700">
+                {heatmap.topWeak.map((x) => (
+                  <li key={x.id} className="flex items-center justify-between gap-2">
+                    <span className="truncate">{x.name}</span>
+                    <span className="shrink-0 font-semibold">{Math.round(x.percent)}%</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-600">
+                Sugestão prática: priorize ações nas dimensões mais fracas para elevar a pontuação total do
+                modelo do artigo.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-4 rounded-2xl border bg-white p-4 shadow-sm">
+          <div className="font-semibold text-slate-900">Análise de maturidade Lean</div>
           <div className="text-xs text-slate-600">
-            Pontuação final (Pontos × Peso) + Pesos (1–5) — conforme modelo do
-            artigo.
+            Pontuação final (Pontos × Peso) + Pesos (1–5) — conforme modelo do artigo.
           </div>
 
           <div className="mt-3 h-[320px]">
@@ -538,11 +664,7 @@ export default function ResultPage() {
             disabled={savingLock || assessmentLocked}
             className="w-full rounded-2xl bg-emerald-600 py-3 text-white disabled:opacity-60"
           >
-            {assessmentLocked
-              ? "Avaliação travada"
-              : savingLock
-              ? "Finalizando..."
-              : "Finalizar e travar"}
+            {assessmentLocked ? "Avaliação travada" : savingLock ? "Finalizando..." : "Finalizar e travar"}
           </button>
 
           <button
