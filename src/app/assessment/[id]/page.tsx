@@ -143,9 +143,6 @@ function buildHelpLines(q: Question, dimName?: string) {
 
   const lines: string[] = [];
 
-  if (dim) lines.push(`Dimensão: ${dim}.`);
-  if (conceptRaw) lines.push(`O que está sendo avaliado: ${conceptRaw}.`);
-
   if (explanation) {
     lines.push(explanation);
   } else {
@@ -157,9 +154,6 @@ function buildHelpLines(q: Question, dimName?: string) {
 
   lines.push(
     "Como responder (1–5): escolha o número que melhor representa a realidade atual, com base em evidências/rotina do dia a dia."
-  );
-  lines.push(
-    "1 = inexistente/raramente ocorre • 3 = ocorre parcialmente • 5 = ocorre de forma consistente e padronizada."
   );
   lines.push("Dica: se houver variação por setor/equipe, responda pela média ou pelo cenário mais frequente.");
 
