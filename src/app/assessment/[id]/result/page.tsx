@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { leanEducation, getEducationKeyByClassification } from "@/lib/leanEducation";
 import {
   Chart,
   RadarController,
@@ -47,6 +48,19 @@ type ResponseRow = { question_id: number; value: number };
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
+}
+
+function PlayIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M8.5 6.5v11l9-5.5-9-5.5Z" />
+    </svg>
+  );
 }
 
 /**
@@ -106,7 +120,7 @@ function classifyByPoints(totalPoints: number) {
     label: "Empresas em risco",
     range: "0 – 92 pontos",
     note:
-      "•	Alerta Vermelho! A sua empresa praticamente desconhece ou não aplica processos de otimização de produção (Lean). Isso significa que vocês provavelmente perdem muito dinheiro com desperdícios, falhas e falta de padronização. É urgente repensar o modo como a empresa trabalha para garantir a sua sobrevivência e competitividade.",
+      "Alerta Vermelho! A sua empresa praticamente desconhece ou não aplica processos de otimização de produção (Lean). Isso significa que vocês provavelmente perdem muito dinheiro com desperdícios, falhas e falta de padronização. É urgente repensar o modo como a empresa trabalha para garantir a sua sobrevivência e competitividade.",
   };
 }
 
@@ -158,6 +172,10 @@ function classificationAccent(label: string) {
       glow: "shadow-emerald-200/70",
       pulse: "animate-pulse",
       title: "Desempenho excelente",
+      eduWrap: "border-emerald-200 bg-emerald-50/70",
+      eduButton: "bg-emerald-600 hover:bg-emerald-700 text-white",
+      eduSecondary: "border-emerald-200 text-emerald-700 hover:bg-emerald-50",
+      eduSoft: "bg-emerald-100 text-emerald-700 ring-emerald-200",
     };
   }
 
@@ -168,6 +186,10 @@ function classificationAccent(label: string) {
       glow: "shadow-sky-200/70",
       pulse: "animate-pulse",
       title: "Bom desempenho geral",
+      eduWrap: "border-sky-200 bg-sky-50/70",
+      eduButton: "bg-sky-600 hover:bg-sky-700 text-white",
+      eduSecondary: "border-sky-200 text-sky-700 hover:bg-sky-50",
+      eduSoft: "bg-sky-100 text-sky-700 ring-sky-200",
     };
   }
 
@@ -178,6 +200,10 @@ function classificationAccent(label: string) {
       glow: "shadow-amber-200/70",
       pulse: "animate-pulse",
       title: "Pontos de atenção",
+      eduWrap: "border-amber-200 bg-amber-50/70",
+      eduButton: "bg-amber-500 hover:bg-amber-600 text-white",
+      eduSecondary: "border-amber-200 text-amber-700 hover:bg-amber-50",
+      eduSoft: "bg-amber-100 text-amber-700 ring-amber-200",
     };
   }
 
@@ -187,6 +213,10 @@ function classificationAccent(label: string) {
     glow: "shadow-red-200/70",
     pulse: "animate-pulse",
     title: "Situação crítica",
+    eduWrap: "border-red-200 bg-red-50/70",
+    eduButton: "bg-red-600 hover:bg-red-700 text-white",
+    eduSecondary: "border-red-200 text-red-700 hover:bg-red-50",
+    eduSoft: "bg-red-100 text-red-700 ring-red-200",
   };
 }
 
@@ -349,6 +379,19 @@ export default function ResultPage() {
     () => classificationAccent(weighted.classification.label),
     [weighted.classification.label]
   );
+
+  const educationVideo = useMemo(() => {
+    const key = getEducationKeyByClassification(weighted.classification.label);
+    return leanEducation.classes[key];
+  }, [weighted.classification.label]);
+
+  function openVideo(url: string) {
+    if (!url) {
+      alert("O link do vídeo ainda não foi preenchido.");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 
   // Radar
   useEffect(() => {
@@ -546,7 +589,7 @@ export default function ResultPage() {
           </div>
         </div>
 
-        {/* ✅ NOVO CARD DE CLASSIFICAÇÃO DESTACADA */}
+        {/* ✅ CARD DE CLASSIFICAÇÃO DESTACADA */}
         <section
           className={[
             "mb-4 overflow-hidden rounded-3xl border p-4 shadow-lg transition-all duration-300",
@@ -604,8 +647,83 @@ export default function ResultPage() {
                   {overall.avg.toFixed(2)}
                 </div>
                 <div className="text-xs text-slate-600">em uma escala de 1 a 5</div>
-                <div className="mt-1 text-[11px] text-slate-500">{overall.percent}% da escala de maturidade</div>
+                <div className="mt-1 text-[11px] text-slate-500">
+                  {overall.percent}% da escala de maturidade
+                </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ✅ CTA EDUCACIONAL REFINADO */}
+        <section
+          className={[
+            "mb-4 rounded-3xl border p-4 shadow-sm transition-all duration-300",
+            classificationUi.eduWrap,
+          ].join(" ")}
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={[
+                    "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ring-1",
+                    classificationUi.eduSoft,
+                  ].join(" ")}
+                >
+                  Conteúdo educacional
+                </span>
+
+                <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                  <PlayIcon className="h-4 w-4" />
+                  Vídeo recomendado
+                </span>
+              </div>
+
+              <div className="mt-3 text-lg font-bold tracking-tight text-slate-900">
+                Assistir orientação recomendada
+              </div>
+
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-700">
+                Sua empresa foi classificada como <b>{weighted.classification.label}</b>. Este vídeo
+                explica o significado prático dessa faixa de resultado e apresenta orientações para
+                apoiar a interpretação do diagnóstico e a tomada de decisão.
+              </p>
+
+              <div className="mt-3 rounded-2xl bg-white/80 p-3 ring-1 ring-white/80 backdrop-blur-sm">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Orientação correspondente
+                </div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">
+                  {educationVideo.label}
+                </div>
+                <div className="mt-1 text-xs leading-relaxed text-slate-600">
+                  {educationVideo.description}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
+              <button
+                onClick={() => openVideo(educationVideo.youtubeUrl)}
+                className={[
+                  "inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition active:scale-[0.99]",
+                  classificationUi.eduButton,
+                ].join(" ")}
+              >
+                <PlayIcon className="h-5 w-5" />
+                Assistir orientação recomendada
+              </button>
+
+              <button
+                onClick={() => router.push("/education")}
+                className={[
+                  "rounded-2xl border bg-white px-4 py-3 text-sm font-semibold shadow-sm transition active:scale-[0.99]",
+                  classificationUi.eduSecondary,
+                ].join(" ")}
+              >
+                Explorar central educacional
+              </button>
             </div>
           </div>
         </section>
@@ -617,7 +735,9 @@ export default function ResultPage() {
               {overall.avg.toFixed(2)}
             </div>
             <div className="mt-1 text-xs text-slate-500">escala real de 1 a 5</div>
-            <div className="mt-1 text-sm text-slate-600">{overall.percent}% da escala de Maturidade Lean</div>
+            <div className="mt-1 text-sm text-slate-600">
+              {overall.percent}% da escala de Maturidade Lean
+            </div>
 
             <div className="mt-4 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
               <div className="text-xs font-semibold text-slate-700">Pontuação (LM)</div>
