@@ -15,10 +15,10 @@ type Assessment = {
   id: string;
   title: string;
   context_unit: string | null;
-  applied_at: string; // geralmente "YYYY-MM-DD"
+  applied_at: string;
   created_at: string;
   company_id: string;
-  companies?: { name: string }[] | null; // relação pode vir como array
+  companies?: { name: string }[] | null;
 };
 
 function formatDateTime(value: string) {
@@ -240,7 +240,6 @@ export default function HomePage() {
     setBusy(true);
     setError(null);
 
-    // Com ON DELETE CASCADE: basta apagar a empresa
     const { error: delCompErr } = await supabase.from("companies").delete().eq("id", companyId);
 
     setBusy(false);
@@ -308,7 +307,6 @@ export default function HomePage() {
     setBusy(true);
     setError(null);
 
-    // Com ON DELETE CASCADE: basta apagar a avaliação
     const { error: delErr } = await supabase.from("assessments").delete().eq("id", assessmentId);
 
     setBusy(false);
@@ -323,19 +321,14 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      {/* container mais largo no desktop */}
       <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8">
         {/* HEADER com LOGO */}
         <header className="mb-6">
-
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-
             {/* LOGO + TEXTO */}
             <div className="flex items-start gap-3">
-
               {/* LOGO maior */}
-              <div className="h-24 w-24 sm:h-28 sm:w-28 overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shrink-0">
-
+              <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 sm:h-28 sm:w-28">
                 <img
                   src="/icons/icon-192.png"
                   onError={(e) => {
@@ -344,48 +337,41 @@ export default function HomePage() {
                   alt="Logo Escala Lean Maturity"
                   className="h-full w-full object-contain p-1"
                 />
-
               </div>
-
 
               {/* TEXTOS */}
               <div className="min-w-0">
-
-                {/* título com gradiente */}
                 <h1
                   className="
-                  text-2xl sm:text-3xl font-bold
-                  bg-gradient-to-r
-                  from-emerald-600
-                  via-emerald-900
-                  to-teal-500
-                  bg-clip-text
-                  text-transparent
-                  leading-tight
-                  break-words
+                    break-words bg-gradient-to-r from-emerald-600 via-emerald-900 to-teal-500
+                    bg-clip-text text-2xl font-bold leading-tight text-transparent sm:text-3xl
                   "
                 >
                   Escala Lean de Maturidade
                 </h1>
 
-                <p className="mt-1 text-sm sm:text-base text-slate-600 leading-snug">
+                <p className="mt-1 text-sm leading-snug text-slate-600 sm:text-base">
                   PWA • Formulário de avaliações de maturidade Lean
                 </p>
-
               </div>
-
             </div>
-
           </div>
 
           {/* ações principais */}
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:max-w-md">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:max-w-2xl sm:grid-cols-3">
             <Link
               href="/new"
               className="rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 active:scale-[0.99]"
             >
               + Nova avaliação
             </Link>
+
+            <button
+              onClick={() => router.push("/education")}
+              className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50 active:scale-[0.99]"
+            >
+              Central Educacional
+            </button>
 
             <button
               onClick={load}
@@ -408,6 +394,34 @@ export default function HomePage() {
             Erro: {error}
           </div>
         )}
+
+        {/* destaque educacional */}
+        <section className="mb-6 rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-teal-50 p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                Educação Lean
+              </div>
+              <h2 className="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+                Aprenda a interpretar seu resultado com vídeos orientativos
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">
+                Acesse a central educacional para entender melhor o método Lean de maturidade,
+                assistir aos vídeos explicativos e aprofundar a leitura da classificação obtida
+                pela empresa.
+              </p>
+            </div>
+
+            <div className="shrink-0">
+              <button
+                onClick={() => router.push("/education")}
+                className="w-full rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 active:scale-[0.99] sm:w-auto"
+              >
+                Abrir central educacional
+              </button>
+            </div>
+          </div>
+        </section>
 
         {/* layout desktop: duas colunas */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
