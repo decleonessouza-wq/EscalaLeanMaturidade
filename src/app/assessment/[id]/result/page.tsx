@@ -80,7 +80,7 @@ function classifyByPoints(totalPoints: number) {
       label: "Empresas Destaques",
       range: "281 – 375 pontos",
       note:
-        "Tanto os líderes quanto os funcionários entendem e aplicam ferramentas do LM. A soma das notas é de pelo menos 75% da pontuação total.",
+        "Excelente! Você é uma referência. A sua empresa tem a cultura Lean correndo nas veias. Desde a alta liderança até a operação, todos entendem a importância de evitar desperdícios e melhorar os processos. A sua empresa está muito bem preparada para dar os próximos passos rumo à Indústria 4.0. Tanto os líderes quanto os funcionários entendem e aplicam ferramentas do LM.",
     };
   }
 
@@ -89,7 +89,7 @@ function classifyByPoints(totalPoints: number) {
       label: "Empresas Acima da Média",
       range: "187 – 280 pontos",
       note:
-        "A soma das notas fica entre 50% e 75% da pontuação total. Muitas das ferramentas do LM são aplicadas, embora possa haver alguns setores que ainda não adotaram a cultura lean.",
+        "Você está no caminho certo, mas ainda pode melhorar! A sua empresa já utiliza boas práticas de produção e entende a importância da metodologia, mas ela ainda não é uma realidade para todos. Alguns departamentos podem estar mais atrasados que outros. O desafio agora é unificar essa cultura para a empresa inteira. Muitas das ferramentas do LM são aplicadas, embora possa haver alguns setores que ainda não adotaram a cultura lean.",
     };
   }
 
@@ -98,7 +98,7 @@ function classifyByPoints(totalPoints: number) {
       label: "Empresas Médias",
       range: "93 – 186 pontos",
       note:
-        "A soma das notas fica entre 25% e 50% da pontuação total. Nesta categoria, muitas práticas de produção e de relacionamento com clientes seguem modelos de gestão antigos.",
+        "Atenção! Sua empresa está parada no tempo. Vocês ainda gerenciam a produção e lidam com os clientes de uma forma muito tradicional e antiga. É preciso começar a modernizar a gestão, treinar as pessoas e aplicar ferramentas básicas de melhoria contínua para não ficar para trás em relação ao mercado. Nesta categoria, muitas práticas de produção e de relacionamento com clientes seguem modelos de gestão antigos.",
     };
   }
 
@@ -106,7 +106,7 @@ function classifyByPoints(totalPoints: number) {
     label: "Empresas em risco",
     range: "0 – 92 pontos",
     note:
-      "A soma das notas é inferior a 25% da pontuação total. Estas empresas utilizam poucas ou nenhuma das ferramentas do LM ou elementos culturais apresentados neste estudo.",
+      "•	Alerta Vermelho! A sua empresa praticamente desconhece ou não aplica processos de otimização de produção (Lean). Isso significa que vocês provavelmente perdem muito dinheiro com desperdícios, falhas e falta de padronização. É urgente repensar o modo como a empresa trabalha para garantir a sua sobrevivência e competitividade.",
   };
 }
 
@@ -142,6 +142,51 @@ function heatBucket(percent0to100: number) {
   return {
     label: "Crítico",
     cls: "bg-red-600 text-white ring-red-700/20",
+  };
+}
+
+/**
+ * Card principal de classificação visual da empresa
+ */
+function classificationAccent(label: string) {
+  const key = label.toLowerCase();
+
+  if (key.includes("destaques")) {
+    return {
+      wrap: "border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-emerald-100",
+      badge: "bg-emerald-600 text-white ring-emerald-700/20",
+      glow: "shadow-emerald-200/70",
+      pulse: "animate-pulse",
+      title: "Desempenho excelente",
+    };
+  }
+
+  if (key.includes("acima da média")) {
+    return {
+      wrap: "border-sky-200 bg-gradient-to-r from-sky-50 via-white to-sky-100",
+      badge: "bg-sky-600 text-white ring-sky-700/20",
+      glow: "shadow-sky-200/70",
+      pulse: "animate-pulse",
+      title: "Bom desempenho geral",
+    };
+  }
+
+  if (key.includes("médias")) {
+    return {
+      wrap: "border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-100",
+      badge: "bg-amber-500 text-white ring-amber-600/20",
+      glow: "shadow-amber-200/70",
+      pulse: "animate-pulse",
+      title: "Pontos de atenção",
+    };
+  }
+
+  return {
+    wrap: "border-red-200 bg-gradient-to-r from-red-50 via-white to-red-100",
+    badge: "bg-red-600 text-white ring-red-700/20",
+    glow: "shadow-red-200/70",
+    pulse: "animate-pulse",
+    title: "Situação crítica",
   };
 }
 
@@ -233,8 +278,8 @@ export default function ResultPage() {
   }, [dimensions, questions, byQuestion]);
 
   /**
-   * Percentual geral (0..100) mantido para UI,
-   * mas a pontuação "conforme artigo" vem do weighted.totalPoints (0..375).
+   * Média geral real do questionário (1..5)
+   * e percentual secundário (avg/5 * 100)
    */
   const overall = useMemo(() => {
     const vals: number[] = [];
@@ -245,7 +290,10 @@ export default function ResultPage() {
     const sum = vals.length ? vals.reduce((a, b) => a + b, 0) : 0;
     const avg = vals.length ? sum / vals.length : 0;
     const percent = (avg / 5) * 100;
-    return { avg: Number(avg.toFixed(2)), percent: Number(percent.toFixed(0)) };
+    return {
+      avg: Number(avg.toFixed(2)),
+      percent: Number(percent.toFixed(0)),
+    };
   }, [questions, byQuestion]);
 
   /**
@@ -296,6 +344,11 @@ export default function ResultPage() {
 
     return { rows, topStrong, topWeak };
   }, [dimensionStats]);
+
+  const classificationUi = useMemo(
+    () => classificationAccent(weighted.classification.label),
+    [weighted.classification.label]
+  );
 
   // Radar
   useEffect(() => {
@@ -493,13 +546,81 @@ export default function ResultPage() {
           </div>
         </div>
 
+        {/* ✅ NOVO CARD DE CLASSIFICAÇÃO DESTACADA */}
+        <section
+          className={[
+            "mb-4 overflow-hidden rounded-3xl border p-4 shadow-lg transition-all duration-300",
+            classificationUi.wrap,
+            classificationUi.glow,
+          ].join(" ")}
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Classificação da empresa
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <span
+                  className={[
+                    "rounded-full px-4 py-2 text-sm font-bold ring-1 shadow-sm",
+                    classificationUi.badge,
+                    classificationUi.pulse,
+                  ].join(" ")}
+                >
+                  {weighted.classification.label}
+                </span>
+
+                <span className="text-sm font-medium text-slate-700">
+                  {weighted.classification.range}
+                </span>
+              </div>
+
+              <div className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                {classificationUi.title}
+              </div>
+
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-700">
+                {weighted.classification.note}
+              </p>
+            </div>
+
+            <div className="grid shrink-0 grid-cols-2 gap-3 sm:min-w-[260px]">
+              <div className="rounded-2xl bg-white/80 p-3 ring-1 ring-white/70 backdrop-blur-sm">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Pontuação
+                </div>
+                <div className="mt-1 text-2xl font-bold text-slate-900">
+                  {weighted.totalPoints}
+                </div>
+                <div className="text-xs text-slate-600">de {weighted.maxTotal} pts</div>
+              </div>
+
+              <div className="rounded-2xl bg-white/80 p-3 ring-1 ring-white/70 backdrop-blur-sm">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Média geral
+                </div>
+                <div className="mt-1 text-2xl font-bold text-slate-900">
+                  {overall.avg.toFixed(2)}
+                </div>
+                <div className="text-xs text-slate-600">em uma escala de 1 a 5</div>
+                <div className="mt-1 text-[11px] text-slate-500">{overall.percent}% da escala de maturidade</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div className="grid gap-4 lg:grid-cols-3">
           <section className="rounded-2xl border bg-white p-4 shadow-sm lg:col-span-1">
-            <div className="text-sm text-slate-600">Maturidade Geral</div>
-            <div className="mt-1 text-4xl font-semibold text-slate-900">{overall.percent}%</div>
+            <div className="text-sm text-slate-600">MATURIDADE - Média Geral</div>
+            <div className="mt-1 text-4xl font-semibold text-slate-900">
+              {overall.avg.toFixed(2)}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">escala real de 1 a 5</div>
+            <div className="mt-1 text-sm text-slate-600">{overall.percent}% da escala de Maturidade Lean</div>
 
             <div className="mt-4 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
-              <div className="text-xs font-semibold text-slate-700">Pontuação (modelo do artigo)</div>
+              <div className="text-xs font-semibold text-slate-700">Pontuação (LM)</div>
 
               <div className="mt-1 flex items-baseline gap-2">
                 <div className="text-2xl font-semibold text-slate-900">{weighted.totalPoints}</div>
@@ -556,10 +677,7 @@ export default function ResultPage() {
 
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {heatmap.rows.map((d) => (
-              <div
-                key={d.id}
-                className="rounded-2xl border border-slate-200 bg-white p-3"
-              >
+              <div key={d.id} className="rounded-2xl border border-slate-200 bg-white p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold text-slate-900">{d.name}</div>
@@ -618,8 +736,8 @@ export default function ResultPage() {
                 ))}
               </ul>
               <p className="mt-2 text-[11px] leading-relaxed text-slate-600">
-                Sugestão prática: priorize ações nas dimensões mais fracas para elevar a pontuação total do
-                modelo do artigo.
+                Sugestão prática: priorize ações nas dimensões mais fracas para elevar a pontuação total da
+                sua empresa.
               </p>
             </div>
           </div>
@@ -628,7 +746,7 @@ export default function ResultPage() {
         <section className="mt-4 rounded-2xl border bg-white p-4 shadow-sm">
           <div className="font-semibold text-slate-900">Análise de maturidade Lean</div>
           <div className="text-xs text-slate-600">
-            Pontuação final (Pontos × Peso) + Pesos (1–5) — conforme modelo do artigo.
+            Pontuação final (Pontos × Peso) + Pesos (1–5) — conforme método Lean.
           </div>
 
           <div className="mt-3 h-[320px]">
@@ -664,7 +782,11 @@ export default function ResultPage() {
             disabled={savingLock || assessmentLocked}
             className="w-full rounded-2xl bg-emerald-600 py-3 text-white disabled:opacity-60"
           >
-            {assessmentLocked ? "Avaliação travada" : savingLock ? "Finalizando..." : "Finalizar e travar"}
+            {assessmentLocked
+              ? "Avaliação travada"
+              : savingLock
+              ? "Finalizando..."
+              : "Finalizar e travar"}
           </button>
 
           <button
