@@ -54,79 +54,79 @@ function normKey(s: string) {
  */
 const EXPLAIN_BY_CONCEPT: Record<string, string> = {
   [normKey("One-piece-flow")]:
-    "Aqui você está perguntando se o trabalho “anda” de um processo para o outro sem virar montes e montes de peças paradas no meio. É como uma “fila organizada”: termina aqui e já vai para o próximo, sem acumular estoque entre etapas.",
+    "Aqui está perguntando se o trabalho na sua empresa “anda” de um processo para o outro sem virar montes e montes de peças paradas no meio. É como uma “fila organizada”: termina aqui e já vai para o próximo, sem acumular estoque entre etapas.",
 
   [normKey("5S")]:
-    "Aqui você quer saber se o local de trabalho tem ordem e padrão: ferramentas no lugar certo, áreas identificadas, limpeza, tudo fácil de achar. Se as pessoas perdem tempo procurando coisa, ou se é “cada um guarda onde quer”.",
+    "Aqui quer saber se o local de trabalho tem ordem e padrão: ferramentas no lugar certo, áreas identificadas, limpeza, tudo fácil de achar. Se as pessoas perdem tempo procurando coisa, ou se é “cada um guarda onde quer”.",
 
   [normKey("PDCA")]:
-    "Você está perguntando se quando dá problema a empresa corrige a causa (não só o “remendo”). Ou seja: identifica o que deu errado, planeja a correção, aplica, confere se resolveu e padroniza para não repetir.",
+    "Aqui está perguntando se quando dá problema a empresa corrige a causa (não só o “remendo”). Ou seja: identifica o que deu errado, planeja a correção, aplica, confere se resolveu e padroniza para não repetir.",
 
   [normKey("Padronização + Gestão Visual")]:
-    "Aqui você quer saber se as melhorias viram regra do jogo (padrão escrito/visual) e se a informação é transparente: procedimento atualizado, quadro/indicadores visíveis, todo mundo sabe como está o resultado e o que mudou.",
+    "Aqui quer saber se as melhorias viram regra do jogo (padrão escrito/visual) e se a informação é transparente: procedimento atualizado, quadro/indicadores visíveis, todo mundo sabe como está o resultado e o que mudou.",
 
   [normKey("TPM")]:
-    "Você está perguntando se a empresa cuida das máquinas antes de quebrar. Se existe rotina de inspeção/manutenção preventiva para evitar falhas, paradas e defeitos por desgaste.",
+    "Aqui está perguntando se a empresa cuida das máquinas antes de quebrar. Se existe rotina de inspeção/manutenção preventiva para evitar falhas, paradas e defeitos por desgaste.",
 
   [normKey("Produção nivelada")]:
-    "Aqui você quer saber se eles produzem de acordo com o que o cliente pede/consome, e não por “achismo” ou para encher estoque. Lote é decidido pelo mercado, não pela vontade interna.",
+    "Aqui quer saber se eles produzem de acordo com o que o cliente pede/consome, e não por “achismo” ou para encher estoque. Lote é decidido pelo mercado, não pela vontade interna.",
 
   [normKey("Produção puxada")]:
-    "Você está perguntando se a produção acontece porque alguém realmente precisa (cliente ou próxima etapa consumiu), e não porque “tem que deixar a máquina rodando”. É produzir sob sinal de consumo/pedido.",
+    "Aqui está perguntando se a produção acontece porque alguém realmente precisa (cliente ou próxima etapa consumiu), e não porque “tem que deixar a máquina rodando”. É produzir sob sinal de consumo/pedido.",
 
   [normKey("JIT")]:
-    "Aqui você está perguntando se o abastecimento funciona “redondo”: material e peça chegam na hora certa, sem faltar (parar a produção) e sem sobrar (entupir o chão/estoque).",
+    "Aqui está perguntando se o abastecimento funciona “redondo”: material e peça chegam na hora certa, sem faltar (parar a produção) e sem sobrar (entupir o chão/estoque).",
 
   [normKey("Takt-time")]:
-    "Você quer saber se o trabalho é distribuído de forma justa e eficiente: se não existe uma etapa sempre “engarrafando” e outra sempre sobrando. É sobre equilíbrio do ritmo para evitar gargalo e correria.",
+    "Esta questão quer saber se o trabalho é distribuído de forma justa e eficiente: se não existe uma etapa sempre “engarrafando” e outra sempre sobrando. É sobre equilíbrio do ritmo para evitar gargalo e correria.",
 
   [normKey("VSM")]:
-    "Aqui você pergunta se a empresa desenhou o caminho completo (do pedido até a entrega) e usa esse mapa para achar desperdícios, demoras, retrabalho e gargalos — e se isso vira melhoria prática.",
+    "Aqui pergunta se a empresa desenhou o caminho completo (do pedido até a entrega) e usa esse mapa para achar desperdícios, demoras, retrabalho e gargalos — e se isso vira melhoria prática.",
 
   [normKey("Autonomia")]:
-    "Você quer saber se quem está “na linha” tem voz: se o trabalhador é estimulado a apontar problema e sugerir melhoria, ou se ele só executa e fica calado.",
+    "Aqui quer saber se quem está “na linha” tem voz: se o trabalhador é estimulado a apontar problema e sugerir melhoria, ou se ele só executa e fica calado.",
 
   [normKey("Motivação")]:
     "Aqui é simples: quando alguém dá uma boa ideia, a empresa valoriza e reconhece, ou ignora? Reconhecimento pode ser elogio formal, bônus, pontos, destaque, oportunidade — o importante é não deixar a pessoa “no vácuo”.",
 
   [normKey("Trabalho em equipe")]:
-    "Você está perguntando se existem reuniões que realmente servem para olhar indicadores, entender problemas e decidir ações, e não só reunião “pra conversar”. É rotina de acompanhamento.",
+    "Aqui está perguntando se existem reuniões que realmente servem para olhar indicadores, entender problemas e decidir ações, e não só reunião “pra conversar”. É rotina de acompanhamento.",
 
   [normKey("Kaizen com parceiros")]:
-    "Aqui você pergunta se a empresa melhora só “dentro de casa” ou se ela envolve quem está fora: fornecedor e revendedor. Se existe treinamento/padrão/projeto conjunto para melhorar a cadeia inteira, não só a fábrica.",
+    "Aqui pergunta se a empresa melhora só “dentro de casa” ou se ela envolve quem está fora: fornecedor e revendedor. Se existe treinamento/padrão/projeto conjunto para melhorar a cadeia inteira, não só a fábrica.",
 
   [normKey("Liderança")]:
-    "Você quer saber se a liderança “banca” Lean de verdade: define rumo, prioriza, dá recursos/tempo, remove barreiras. Não é só mandar; é sustentar a mudança.",
+    "Aqui quer saber se a liderança “banca” Lean de verdade: define rumo, prioriza, dá recursos/tempo, remove barreiras. Não é só mandar; é sustentar a mudança.",
 
   [normKey("Transparência")]:
-    "Aqui você pergunta se a operação é guiada por dados “na hora”: sistemas, painéis, registros digitais, atualização rápida. Ou se tudo depende de papel, conversa, planilha solta e demora para saber o que está acontecendo.",
+    "Aqui pergunta se a operação é guiada por dados “na hora”: sistemas, painéis, registros digitais, atualização rápida. Ou se tudo depende de papel, conversa, planilha solta e demora para saber o que está acontecendo.",
 
   [normKey("Modularização")]:
-    "Você quer saber se eles param de “inventar um processo do zero” toda vez. Se a empresa tem modelos prontos (templates/módulos) que reaproveita quando o trabalho é parecido, para ganhar velocidade e padrão.",
+    "Aqui quer saber se eles param de “inventar um processo do zero” toda vez. Se a empresa tem modelos prontos (templates/módulos) que reaproveita quando o trabalho é parecido, para ganhar velocidade e padrão.",
 
   [normKey("Flexibilidade")]:
-    "Aqui você pergunta se a empresa consegue perceber “sobrou tempo/capacidade aqui” e redireciona trabalho automaticamente (ou com regra clara), usando medição real (sensor/dado) e não “achismo”.",
+    "Aqui quer saber se a empresa consegue perceber “sobrou tempo/capacidade aqui” e redireciona trabalho automaticamente (ou com regra clara), usando medição real (sensor/dado) e não “achismo”.",
 
   [normKey("Manutenção por dados")]:
-    "Você quer saber se a manutenção é planejada com base em histórico e sinais (tempo de uso, vibração, falhas, desempenho), para evitar quebra. É manutenção orientada por dados, não só por calendário “fixo” ou urgência.",
+    "Aqui quer saber se a manutenção é planejada com base em histórico e sinais (tempo de uso, vibração, falhas, desempenho), para evitar quebra. É manutenção orientada por dados, não só por calendário “fixo” ou urgência.",
 
   [normKey("Rastreabilidade")]:
-    "Aqui você pergunta se, quando dá defeito, a empresa consegue rastrear de onde veio (lote, máquina, turno, operador, matéria-prima) e corrige a causa principal — não só joga fora e segue.",
+    "Aqui pergunta se, quando dá defeito, a empresa consegue rastrear de onde veio (lote, máquina, turno, operador, matéria-prima) e corrige a causa principal — não só joga fora e segue.",
 
   [normKey("Machine Learning")]:
-    "Você quer saber se existe “inteligência” no sistema: usando dados históricos para o algoritmo recomendar ou ajustar produção/estoque/sequência/manutenção, aprendendo com o tempo (não só relatório bonito).",
+    "Aqui quer saber se existe “inteligência” no sistema: usando dados históricos para o algoritmo recomendar ou ajustar produção/estoque/sequência/manutenção, aprendendo com o tempo (não só relatório bonito).",
 
   [normKey("Big Data / Analytics")]:
-    "Aqui você pergunta se, quando algo dá errado (máquina parou, material atrasou), o sistema consegue replanejar e achar alternativas para não travar tudo — com base em dados e análise, não só “correria”.",
+    "Aqui pergunta se, quando algo dá errado (máquina parou, material atrasou), o sistema consegue replanejar e achar alternativas para não travar tudo — com base em dados e análise, não só “correria”.",
 
   [normKey("Automação logística interna")]:
-    "Você quer saber se o transporte interno é automatizado (AGV, robô, esteira inteligente), levando material até o ponto certo com menos esforço humano, mais controle e menos erro/atraso.",
+    "Aqui quer saber se o transporte interno é automatizado (AGV, robô, esteira inteligente), levando material até o ponto certo com menos esforço humano, mais controle e menos erro/atraso.",
 
   [normKey("Integração vertical")]:
-    "Você pergunta se o produto “continua vivo” depois de vendido: se ele é conectado e gera dados, permitindo serviços como monitoramento, manutenção preventiva, assinatura, suporte avançado — criando novos modelos de receita.",
+    "Aqui pergunta se o produto “continua vivo” depois de vendido: se ele é conectado e gera dados, permitindo serviços como monitoramento, manutenção preventiva, assinatura, suporte avançado — criando novos modelos de receita.",
 
   [normKey("Integração horizontal")]:
-    "Aqui você quer saber se fornecedor e fábrica estão conectados: quando baixa estoque ou aumenta consumo, o sistema já dispara reposição automaticamente (ou quase), reduzindo falta de material, urgência e compras “no desespero”.",
+    "Aqui quer saber se fornecedor e fábrica estão conectados: quando baixa estoque ou aumenta consumo, o sistema já dispara reposição automaticamente (ou quase), reduzindo falta de material, urgência e compras “no desespero”.",
 };
 
 /**
